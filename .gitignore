@@ -1,0 +1,4 @@
+*.dSYM
+app*
+.DS_Store
+archive.txt
