@@ -18,6 +18,24 @@ struct Sprite {
   uint8_t *data;
 };
 
+struct Alien {
+  size_t x, y;
+  uint8_t type;
+};
+
+struct Player {
+  size_t x, y;
+  size_t life;
+};
+
+struct Game {
+  size_t width, height;
+  size_t num_aliens;
+  Alien *aliens;
+  Player player;
+};
+
+
 //** Helper Functions */
 void buffer_sprite_draw(Buffer *buffer, const Sprite &sprite, size_t x,
                         size_t y, uint32_t color) {
@@ -228,11 +246,13 @@ int main(int argc, char const *argv[]) {
   glDisable(GL_DEPTH_TEST);
   glBindVertexArray(fullscreen_triangle_vao);
 
-  // Game
+  //* Game */
+
+  // Sprite bitmap
   Sprite alien_sprite;
   alien_sprite.width = 11;
   alien_sprite.height = 8;
-  alien_sprite.data = new uint8_t[88]{
+  alien_sprite.data = new uint8_t[11 * 8]{
       0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, // ..@.....@..
       0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, // ...@...@...
       0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, // ..@@@@@@@..
@@ -243,13 +263,57 @@ int main(int argc, char const *argv[]) {
       0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 0  // ...@@.@@...
   };
 
+  // Player bitmap
+  Sprite player_sprite;
+  player_sprite.width = 11;
+  player_sprite.height = 7;
+  player_sprite.data = new uint8_t[11 * 7]{
+      0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, // .....@.....
+      0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, // ....@@@....
+      0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, // ....@@@....
+      0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, // .@@@@@@@@@.
+      1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, // @@@@@@@@@@@
+      1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, // @@@@@@@@@@@
+      1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, // @@@@@@@@@@@
+  };
+
   uint32_t clear_color = rgb_to_uint32(0, 128, 0);
+
+  Game game;
+
+  game.width = buffer.width;
+  game.height = buffer.height;
+  game.num_aliens = 60;
+  game.aliens = new Alien[game.num_aliens];
+
+  game.player.x = buffer.width / 2;
+  game.player.y = 32;
+  game.player.life = 3;
+
+  // Position the aliens
+  // TODO: customize this for multiple stages
+  for (size_t yi = 0; yi < 5; ++yi) {
+    for (size_t xi = 0; xi < 12; ++xi) {
+      game.aliens[yi * 12 + xi].x = 16 * xi + 20;
+      game.aliens[yi * 12 + xi].y = 17 * yi + 128;
+    }
+  }
 
   while (!glfwWindowShouldClose(window)) {
     //  double buffering scheme; the "front" buffer is used for displaying an
     //  image, while the "back" buffer is used for drawing
 
     buffer_clear(&buffer, clear_color);
+
+    // Draw everything
+    for (size_t ai = 0; ai < game.num_aliens; ++ai) {
+      const Alien &alien = game.aliens[ai];
+      buffer_sprite_draw(&buffer, alien_sprite, alien.x, alien.y,
+                         rgb_to_uint32(128, 0, 0));
+    }
+
+    buffer_sprite_draw(&buffer, player_sprite, game.player.x, game.player.y,
+                       rgb_to_uint32(128, 0, 0));
 
     buffer_sprite_draw(&buffer, alien_sprite, 112, 128,
                        rgb_to_uint32(128, 0, 0));
